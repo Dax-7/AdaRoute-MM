@@ -1,0 +1,3 @@
+{"id":"text_001","image_path":null,"question":"什么是边缘计算？","answer":"边缘计算是在靠近数据源的位置进行计算。","task_type":"text_only"}
+{"id":"text_002","image_path":null,"question":"请简单解释多模态大模型。","answer":"多模态大模型可以处理文本、图像等多种信息。","task_type":"text_only"}
+{"id":"vqa_001","image_path":"data/inputs/example.jpg","question":"图中有什么主要物体？","answer":"","task_type":"vqa"}

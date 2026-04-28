@@ -1,0 +1,48 @@
+# Python bytecode and test caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments and local dependency installs
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+!.env.example
+
+# IDE and OS metadata
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Runtime outputs, logs, and local caches
+data/outputs/
+data/cache/
+*.log
+
+# Large/raw datasets and model artifacts
+data/inputs/VQAv2/
+data/inputs/**/*.parquet
+data/inputs/**/*.arrow
+data/inputs/**/*.zip
+data/inputs/**/*.tar
+data/inputs/**/*.tar.gz
+models/
+checkpoints/
+*.pt
+*.pth
+*.onnx
+*.safetensors
+
+# Build/package artifacts
+build/
+dist/
+*.egg-info/

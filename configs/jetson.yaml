@@ -1,0 +1,16 @@
+system:
+  monitor_backend: tegrastats
+  overload_policy:
+    cpu_percent: 85
+    ram_percent: 85
+    gpu_percent: 90
+    temp_celsius: 78
+
+routing:
+  default_policy: latency_aware
+
+fallback:
+  max_attempts: 3
+
+runtime:
+  serial_only: true

@@ -1,0 +1,65 @@
+vlm:
+  version: v1
+  template: |
+    Describe the image in detail.
+    Extract visual information relevant to the user's question.
+    Focus on observable facts, objects, text, people, actions, spatial relations, and uncertainty.
+
+    User question:
+    {question}
+
+    Return a concise but informative visual description.
+
+router:
+  version: v1
+  template: |
+    你需要判断一个多模态或文本任务的推理难度。
+
+    用户问题：
+    {question}
+
+    视觉上下文：
+    {caption_text}
+
+    难度定义：
+
+    简单：
+    - 答案可以从问题或图像上下文中直接得到；
+    - 不需要多步推理；
+    - 不需要复杂外部知识；
+    - 通常是识别、描述、简单事实问答。
+
+    中等：
+    - 需要结合问题和视觉上下文；
+    - 需要简单推理、比较、归纳或常识判断；
+    - 可能需要解释一个明显场景或对象关系。
+
+    困难：
+    - 需要多步推理；
+    - 需要复杂知识、规划、诊断、因果分析；
+    - 图像信息存在明显不确定；
+    - 问题要求详细分析、排序、推断后果或综合判断。
+
+    只允许输出以下三个标签之一：
+    简单
+    中等
+    困难
+
+llm:
+  version: v1
+  template: |
+    你是一个严谨的AI助手，请基于以下信息回答问题。
+
+    上下文：
+    {caption_text}
+
+    问题：
+    {question}
+
+    要求：
+    1. 使用中文回答。
+    2. 回答应清晰、准确、简洁。
+    3. 如果图像上下文不足以判断，请明确说明不确定原因。
+    4. 不要编造图像中不存在的信息。
+
+    回答：
