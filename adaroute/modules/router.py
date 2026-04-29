@@ -7,8 +7,20 @@ from adaroute.core.types import ModelResponse
 from adaroute.utils.io import cache_key, read_cache, write_cache
 
 
-def parse_difficulty(text: str, default: str = "中等") -> tuple[str, str | None]:
+LEGACY_EASY = "ç» â‚¬é—?"
+LEGACY_MEDIUM = "æ¶“î… ç“‘"
+LEGACY_HARD = "é¥ä¼´æ¯¦"
+
+
+def parse_difficulty(text: str, default: str = LEGACY_MEDIUM) -> tuple[str, str | None]:
+    normalized = (text or "").strip().lower()
+    for label in ("easy", "medium", "hard"):
+        if label in normalized:
+            return label, None
     for label in ("简单", "中等", "困难"):
+        if label in (text or ""):
+            return label, None
+    for label in (LEGACY_EASY, LEGACY_MEDIUM, LEGACY_HARD):
         if label in (text or ""):
             return label, None
     return default, "ROUTER_PARSE_ERROR"
@@ -22,7 +34,7 @@ class RouterModule:
 
     def run(self, question: str, caption_text: str) -> tuple[str, ModelResponse | None, str | None]:
         router_cfg = self.config.get("router", {})
-        default = router_cfg.get("default_difficulty", "中等")
+        default = router_cfg.get("default_difficulty", LEGACY_MEDIUM)
         if not router_cfg.get("enabled", True):
             return default, None, None
 

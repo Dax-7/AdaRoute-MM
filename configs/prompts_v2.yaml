@@ -1,0 +1,50 @@
+vlm:
+  version: v2-question-aware
+  template: |
+    Describe the image in detail for the user's question.
+    Focus on observable facts, objects, text, people, actions, attributes, spatial relations, counts when obvious, and uncertainty.
+
+    User question:
+    {question}
+
+    Return a compact but information-rich visual description.
+
+vlm_general:
+  version: v2-general-caption
+  template: |
+    Describe the image in dense, factual detail for visual question answering.
+    Include all observable objects, people, actions, attributes, spatial relations, scene context, visible text, counts when obvious, and uncertainty.
+    Do not answer a specific question. Do not infer hidden intent.
+    Return a compact but information-rich caption.
+
+router:
+  version: v2
+  template: |
+    Classify the visual question difficulty using exactly one label: easy, medium, or hard.
+
+    Use easy for direct yes/no questions answerable from obvious objects or attributes.
+    Use medium for questions requiring spatial relations, actions, small details, OCR, or multiple visual facts.
+    Use hard for questions requiring multi-step reasoning, fine-grained recognition, ambiguity handling, or information that may not be visible.
+
+    Question:
+    {question}
+
+    Image caption:
+    {caption_text}
+
+    Return only one label: easy, medium, or hard.
+
+llm:
+  version: v2
+  template: |
+    You answer visual questions using only the image caption below.
+    For yes/no questions, answer with exactly "yes" or "no" first, then a brief reason if needed.
+    If the caption does not contain enough visual evidence, choose the best supported answer and keep the response concise.
+
+    Image caption:
+    {caption_text}
+
+    Question:
+    {question}
+
+    Answer:

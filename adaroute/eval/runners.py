@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from adaroute.core.pipeline import AdaRoutePipeline
 from adaroute.core.types import InferenceInput
-from adaroute.eval.dataset_loader import load_jsonl_dataset
+from adaroute.eval.dataset_loader import iter_jsonl_dataset
 from adaroute.utils.io import append_jsonl, read_jsonl
 
 
@@ -24,10 +24,9 @@ def run_batch(
     policy: str | None = None,
     resume: bool = True,
 ) -> list[dict[str, Any]]:
-    rows = load_jsonl_dataset(input_path)
     seen = existing_ids(output_path) if resume else set()
     results: list[dict[str, Any]] = []
-    for row in tqdm(rows, desc="AdaRoute-MM batch"):
+    for row in tqdm(iter_jsonl_dataset(input_path), desc="AdaRoute-MM batch"):
         sample_id = str(row["id"])
         if resume and sample_id in seen:
             continue
@@ -43,6 +42,14 @@ def run_batch(
             )
             result["sample_id"] = sample_id
             result["reference_answer"] = row.get("answer")
+            result["multiple_choice_answer"] = row.get("multiple_choice_answer", row.get("answer"))
+            result["reference_answers"] = row.get("answers", [])
+            result["answer_type"] = row.get("answer_type")
+            result["question_type"] = row.get("question_type")
+            result["category"] = row.get("category")
+            result["source"] = row.get("source")
+            result["image_id"] = row.get("image_id")
+            result["question_id"] = row.get("question_id")
         except Exception as exc:
             result = {
                 "sample_id": sample_id,
@@ -50,6 +57,14 @@ def run_batch(
                 "status": "failed",
                 "answer": "",
                 "reference_answer": row.get("answer"),
+                "multiple_choice_answer": row.get("multiple_choice_answer", row.get("answer")),
+                "reference_answers": row.get("answers", []),
+                "answer_type": row.get("answer_type"),
+                "question_type": row.get("question_type"),
+                "category": row.get("category"),
+                "source": row.get("source"),
+                "image_id": row.get("image_id"),
+                "question_id": row.get("question_id"),
                 "error": {"code": "UNKNOWN_ERROR", "message": str(exc)},
             }
         append_jsonl(output_path, result)

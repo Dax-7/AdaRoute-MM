@@ -17,23 +17,33 @@ class VLMModule:
     def run(self, question: str, image_path: str | None) -> tuple[str, ModelResponse | None]:
         if not image_path or not self.config.get("vlm", {}).get("enabled", True):
             return "", None
-        if not Path(image_path).exists():
+        image = Path(image_path)
+        if not image.exists():
             return "", ModelResponse(False, self.config["vlm"].get("model", "moondream_vlm"), "", 0.0, error="IMAGE_NOT_FOUND")
 
         model_key = "moondream_vlm"
         model_cfg = self.config["models"][model_key]
-        prompt_cfg = self.prompts["vlm"]
-        prompt = prompt_cfg["template"].format(question=question)
+        caption_mode = self.config.get("vlm", {}).get("caption_mode", "question_aware")
+        if caption_mode == "image_caption":
+            prompt_cfg = self.prompts.get("vlm_general", self.prompts["vlm"])
+            prompt = prompt_cfg["template"].format(question=question)
+        else:
+            prompt_cfg = self.prompts["vlm"]
+            prompt = prompt_cfg["template"].format(question=question)
 
         cache_cfg = self.config.get("cache", {})
         cache_enabled = cache_cfg.get("enabled", True) and cache_cfg.get("cache_vlm", True)
-        key = cache_key([image_path, question, prompt_cfg.get("version"), model_cfg["model_name"]])
+        if caption_mode == "image_caption":
+            stat = image.stat()
+            key = cache_key([str(image.resolve()), stat.st_size, int(stat.st_mtime), prompt_cfg.get("version"), model_cfg["model_name"]])
+        else:
+            key = cache_key([image_path, question, prompt_cfg.get("version"), model_cfg["model_name"]])
         cache_dir = Path(cache_cfg.get("cache_dir", "data/cache")) / "vlm"
         if cache_enabled:
             cached = read_cache(cache_dir, key)
             cached_caption = (cached or {}).get("caption_text", "").strip()
             if cached_caption:
-                response = ModelResponse(True, model_cfg["model_name"], cached_caption, 0.0, raw={"cached": True})
+                response = ModelResponse(True, model_cfg["model_name"], cached_caption, 0.0, raw={"cached": True, "caption_mode": caption_mode})
                 return response.text, response
 
         response = self.client.call_model(
@@ -82,5 +92,16 @@ class VLMModule:
                 error="EMPTY_VLM_RESPONSE",
             )
         if response.ok and cache_enabled:
-            write_cache(cache_dir, key, {"caption_text": response.text, "created_at": time.time()})
+            write_cache(
+                cache_dir,
+                key,
+                {
+                    "caption_text": response.text,
+                    "created_at": time.time(),
+                    "caption_mode": caption_mode,
+                    "image_path": str(image),
+                    "prompt_version": prompt_cfg.get("version"),
+                    "model_name": model_cfg["model_name"],
+                },
+            )
         return response.text if response.ok else "", response

@@ -1,0 +1,125 @@
+project:
+  name: AdaRoute-MM
+  version: '0.1'
+  language: zh
+ollama:
+  base_url: http://localhost:11434
+  api_generate: /api/generate
+  default_timeout: 120
+models:
+  moondream_vlm:
+    provider: ollama
+    model_name: moondream
+    role: vlm
+    supports_vision: true
+    timeout: 90
+  router_small:
+    provider: ollama
+    model_name: qwen2.5:1.5b-instruct-q4_1
+    role: router
+    supports_vision: false
+    timeout: 45
+  qwen_small:
+    provider: ollama
+    model_name: qwen2.5:1.5b
+    role: llm
+    size_level: small
+    supports_vision: false
+    timeout: 60
+  phi3_medium:
+    provider: ollama
+    model_name: phi3
+    role: llm
+    size_level: medium
+    supports_vision: false
+    timeout: 90
+  gemma_large:
+    provider: ollama
+    model_name: sam860/gemma3n:e2b-Q3_K_XL
+    role: llm
+    size_level: large
+    supports_vision: false
+    timeout: 150
+vlm:
+  enabled: true
+  skip_if_no_image: true
+  cache_enabled: true
+  caption_mode: image_caption
+router:
+  enabled: true
+  model: router_small
+  default_difficulty: medium
+  allowed_labels:
+  - 简单
+  - 中等
+  - 困难
+routing:
+  default_policy: difficulty_based
+  policies:
+    difficulty_based:
+      simple: qwen_small
+      medium: phi3_medium
+      hard: gemma_large
+    always_small:
+      default: qwen_small
+    always_medium:
+      default: phi3_medium
+    always_large:
+      default: gemma_large
+    random:
+      candidates:
+      - qwen_small
+      - phi3_medium
+      - gemma_large
+      seed: 42
+    latency_aware:
+      simple: qwen_small
+      medium: phi3_medium
+      hard: gemma_large
+      overload_model: qwen_small
+      skip_large_when_overloaded: true
+fallback:
+  enabled: false
+  max_attempts: 3
+  upgrade_order:
+  - qwen_small
+  - phi3_medium
+  - gemma_large
+  quality_checks:
+    min_chars: 20
+    uncertainty_keywords:
+    - 不确定
+    - 无法判断
+    - 无法确定
+    - 信息不足
+    - 看不清
+    - 不能确定
+    - cannot determine
+    - not sure
+    - unclear
+    - insufficient information
+  retry_same_model_on_error: false
+system:
+  monitor_backend: auto
+  overload_policy:
+    cpu_percent: 85
+    ram_percent: 85
+    gpu_percent: 90
+    temp_celsius: 80
+cache:
+  enabled: true
+  cache_dir: data/experiments/vqav2_yesno_v2/difficulty_cache/cache
+  cache_vlm: true
+  cache_router: false
+  cache_llm: false
+paths:
+  input_dir: data/inputs
+  output_dir: data/experiments/vqav2_yesno_v2/difficulty_cache/requests
+  dataset_dir: data/datasets
+  log_dir: data/experiments/vqav2_yesno_v2/difficulty_cache/logs
+runtime:
+  save_intermediate: true
+  save_raw_response: true
+  serial_only: true
+  experiment_version: v2
+  experiment_mode: difficulty_cache

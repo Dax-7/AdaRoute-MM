@@ -2,3 +2,6 @@ requests
 pyyaml
 psutil
 tqdm
+datasets
+pillow
+pyarrow

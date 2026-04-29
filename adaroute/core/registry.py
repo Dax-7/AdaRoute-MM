@@ -8,7 +8,7 @@ from adaroute.policies.random_policy import RandomPolicy
 
 
 def get_policy(name: str) -> BaseRoutingPolicy:
-    if name in {"always_small", "always_medium", "always_large"}:
+    if name in {"always_small", "always_medium", "always_large", "always_gemma"}:
         return AlwaysPolicy(name)
     policies = {
         "difficulty_based": DifficultyBasedPolicy,

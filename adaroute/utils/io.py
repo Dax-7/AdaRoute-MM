@@ -54,6 +54,18 @@ def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     return rows
 
 
+def iter_jsonl(path: str | Path) -> Iterable[dict[str, Any]]:
+    with Path(path).open("r", encoding="utf-8") as f:
+        for line_no, line in enumerate(f, start=1):
+            text = line.strip()
+            if not text:
+                continue
+            try:
+                yield json.loads(text)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"Invalid JSONL at line {line_no}: {exc}") from exc
+
+
 def append_jsonl(path: str | Path, row: dict[str, Any]) -> None:
     target = Path(path)
     ensure_dir(target.parent)
@@ -66,6 +78,13 @@ def write_json(path: str | Path, data: dict[str, Any]) -> None:
     ensure_dir(target.parent)
     with target.open("w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def write_yaml(path: str | Path, data: dict[str, Any]) -> None:
+    target = Path(path)
+    ensure_dir(target.parent)
+    with target.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
 
 
 def read_json(path: str | Path) -> dict[str, Any]:

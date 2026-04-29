@@ -26,6 +26,9 @@ Thumbs.db
 # Runtime outputs, logs, and local caches
 data/outputs/
 data/cache/
+data/experiments/**/cache/
+data/experiments/**/logs/
+data/experiments/**/requests/
 *.log
 
 # Large/raw datasets and model artifacts

@@ -4,7 +4,17 @@ from adaroute.core.types import RouteDecision
 from adaroute.policies.base import BaseRoutingPolicy
 
 
-DIFFICULTY_TO_CONFIG_KEY = {"简单": "simple", "中等": "medium", "困难": "hard"}
+DIFFICULTY_TO_CONFIG_KEY = {
+    "easy": "simple",
+    "medium": "medium",
+    "hard": "hard",
+    "简单": "simple",
+    "中等": "medium",
+    "困难": "hard",
+    "ç» â‚¬é—?": "simple",
+    "æ¶“î… ç“‘": "medium",
+    "é¥ä¼´æ¯¦": "hard",
+}
 
 
 class DifficultyBasedPolicy(BaseRoutingPolicy):
