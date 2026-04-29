@@ -38,7 +38,7 @@ data/inputs/**/*.arrow
 data/inputs/**/*.zip
 data/inputs/**/*.tar
 data/inputs/**/*.tar.gz
-models/
+/models/
 checkpoints/
 *.pt
 *.pth
