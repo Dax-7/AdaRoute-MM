@@ -4,6 +4,7 @@ from collections import Counter
 from statistics import mean
 from typing import Any
 
+from adaroute.eval.text_answer import score_text_answer
 from adaroute.eval.yesno import compute_yesno_metrics
 
 
@@ -21,6 +22,8 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
     latencies = [float(r.get("latency", {}).get("total", 0.0)) for r in results]
     fallback_counts = [int(r.get("fallback", {}).get("count", 0)) for r in results]
     vlm_calls = [call for row in results for call in row.get("model_calls", []) if call.get("stage") == "vlm"]
+    model_calls = [call for row in results for call in row.get("model_calls", []) if not call.get("skipped")]
+    llm_calls = [call for call in model_calls if call.get("stage") == "llm"]
     cached_vlm_calls = [call for call in vlm_calls if call.get("cached")]
     unique_images = {row.get("input", {}).get("image_path") for row in results if row.get("input", {}).get("image_path")}
     with_answer = [r for r in results if r.get("reference_answer")]
@@ -58,6 +61,58 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
         "exact_match": exact / len(with_answer) if with_answer else None,
         "contains_answer": contains / len(with_answer) if with_answer else None,
     }
+    timed_calls = [call for call in model_calls if isinstance(call.get("timing"), dict)]
+    timed_llm_calls = [call for call in llm_calls if isinstance(call.get("timing"), dict)]
+    for label, calls in (("all_model_calls", timed_calls), ("llm_calls", timed_llm_calls)):
+        summary[f"{label}_inference_only_time"] = (
+            sum(float(call["timing"].get("inference_only_time_s", 0.0)) for call in calls) if calls else 0.0
+        )
+        summary[f"{label}_average_inference_only_time"] = (
+            mean([float(call["timing"].get("inference_only_time_s", 0.0)) for call in calls]) if calls else 0.0
+        )
+        summary[f"{label}_token_normalized_cost"] = (
+            sum(float(call["timing"].get("token_normalized_cost_s", 0.0)) for call in calls) if calls else 0.0
+        )
+        summary[f"{label}_average_prefill_cost_per_token"] = (
+            mean([float(call["timing"].get("prefill_cost_per_token_s", 0.0)) for call in calls]) if calls else 0.0
+        )
+        summary[f"{label}_average_decode_cost_per_token"] = (
+            mean([float(call["timing"].get("decode_cost_per_token_s", 0.0)) for call in calls]) if calls else 0.0
+        )
+    summary["prompt_eval_tokens"] = sum(int(call.get("prompt_eval_count") or 0) for call in model_calls)
+    summary["decode_tokens"] = sum(int(call.get("eval_count") or 0) for call in model_calls)
+
+    text_eval_rows = [
+        row
+        for row in results
+        if row.get("reference_answer") and str(row.get("answer_type") or "").lower() not in {"yes/no", "yes_no", ""}
+    ]
+    if text_eval_rows:
+        scored = [score_text_answer(row) for row in text_eval_rows]
+        evaluated = [item for item in scored if item.get("evaluated")]
+        correct = [item for item in evaluated if item.get("correct")]
+        summary["text_answer"] = {
+            "total_with_reference": len(text_eval_rows),
+            "total_evaluated": len(evaluated),
+            "accuracy": len(correct) / len(evaluated) if evaluated else 0.0,
+            "answer_parse_failure_rate": sum(1 for item in evaluated if not item.get("predicted_answer")) / len(evaluated)
+            if evaluated
+            else 0.0,
+            "by_answer_type": {},
+            "by_source": {},
+        }
+        for group_key, output_key in (("answer_type", "by_answer_type"), ("source", "by_source")):
+            for group_value in sorted({str(row.get(group_key) or "unknown") for row in text_eval_rows}):
+                group_rows = [row for row in text_eval_rows if str(row.get(group_key) or "unknown") == group_value]
+                group_scored = [score_text_answer(row) for row in group_rows]
+                group_eval = [item for item in group_scored if item.get("evaluated")]
+                summary["text_answer"][output_key][group_value] = {
+                    "total": len(group_eval),
+                    "accuracy": sum(1 for item in group_eval if item.get("correct")) / len(group_eval) if group_eval else 0.0,
+                    "parse_failure_rate": sum(1 for item in group_eval if not item.get("predicted_answer")) / len(group_eval)
+                    if group_eval
+                    else 0.0,
+                }
     if any(row.get("answer_type") in {"yes/no", "yes_no"} for row in results):
         summary["yesno"] = compute_yesno_metrics(results)
     return summary

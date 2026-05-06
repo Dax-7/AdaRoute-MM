@@ -1,0 +1,27 @@
+runtime:
+  experiment_version: v3_text
+
+vlm:
+  enabled: false
+  skip_if_no_image: true
+  cache_enabled: false
+
+router:
+  enabled: true
+  default_difficulty: medium
+  allowed_labels:
+    - easy
+    - medium
+    - hard
+
+fallback:
+  enabled: false
+  quality_checks:
+    min_chars: 1
+    uncertainty_keywords: []
+
+cache:
+  enabled: false
+  cache_vlm: false
+  cache_router: false
+  cache_llm: false

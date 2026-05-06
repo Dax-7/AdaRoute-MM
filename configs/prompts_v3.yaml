@@ -1,0 +1,28 @@
+router:
+  version: v3-text-difficulty
+  template: |
+    Classify the text question difficulty using exactly one label: easy, medium, or hard.
+
+    Use easy for direct factual lookup, simple arithmetic, or one-step multiple choice.
+    Use medium for multi-step arithmetic, reading comprehension, or domain knowledge with distractors.
+    Use hard for long context reasoning, multi-hop logic, ambiguous wording, or complex domain questions.
+
+    Question:
+    {question}
+
+    Return only one label: easy, medium, or hard.
+
+llm:
+  version: v3-text-answer
+  template: |
+    You are solving a text-only benchmark item.
+    Follow the requested answer format in the question.
+    Do not include reasoning in the final line.
+    Always end with exactly one line:
+    FINAL_ANSWER: <answer>
+
+    Question:
+    {question}
+
+    FINAL_ANSWER:
+

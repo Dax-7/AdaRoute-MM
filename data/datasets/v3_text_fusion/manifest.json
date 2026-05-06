@@ -1,0 +1,52 @@
+{
+  "version": "v3_text_fusion",
+  "seed": 42,
+  "streaming": true,
+  "component_counts": {
+    "arc_challenge": 500,
+    "gsm8k_zh": 500,
+    "mmlu_pro": 500,
+    "bbh": 500,
+    "drop": 500
+  },
+  "mix_counts": {
+    "arc_challenge": 200,
+    "gsm8k_zh": 300,
+    "mmlu_pro": 200,
+    "bbh": 200,
+    "drop": 100
+  },
+  "component_paths": {
+    "arc_challenge": "data\\datasets\\v3_text_fusion\\arc_challenge_500.jsonl",
+    "gsm8k_zh": "data\\datasets\\v3_text_fusion\\gsm8k_zh_500.jsonl",
+    "mmlu_pro": "data\\datasets\\v3_text_fusion\\mmlu_pro_500.jsonl",
+    "bbh": "data\\datasets\\v3_text_fusion\\bbh_500.jsonl",
+    "drop": "data\\datasets\\v3_text_fusion\\drop_500.jsonl"
+  },
+  "fusion_path": "data\\datasets\\v3_text_fusion\\fusion_1000_200-300-200-200-100.jsonl",
+  "bbh_tasks": [
+    "boolean_expressions",
+    "date_understanding",
+    "disambiguation_qa",
+    "object_counting",
+    "logical_deduction_three_objects"
+  ],
+  "format": {
+    "required": [
+      "id",
+      "question",
+      "answer",
+      "image_path",
+      "task_type"
+    ],
+    "v3_added": [
+      "source",
+      "category",
+      "answer_type",
+      "answer_format",
+      "choices",
+      "choice_labels",
+      "metadata"
+    ]
+  }
+}

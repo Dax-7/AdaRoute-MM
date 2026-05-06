@@ -48,6 +48,10 @@ def run_batch(
             result["question_type"] = row.get("question_type")
             result["category"] = row.get("category")
             result["source"] = row.get("source")
+            result["choices"] = row.get("choices")
+            result["choice_labels"] = row.get("choice_labels")
+            result["answer_format"] = row.get("answer_format")
+            result["metadata"] = row.get("metadata", {})
             result["image_id"] = row.get("image_id")
             result["question_id"] = row.get("question_id")
         except Exception as exc:
@@ -63,6 +67,10 @@ def run_batch(
                 "question_type": row.get("question_type"),
                 "category": row.get("category"),
                 "source": row.get("source"),
+                "choices": row.get("choices"),
+                "choice_labels": row.get("choice_labels"),
+                "answer_format": row.get("answer_format"),
+                "metadata": row.get("metadata", {}),
                 "image_id": row.get("image_id"),
                 "question_id": row.get("question_id"),
                 "error": {"code": "UNKNOWN_ERROR", "message": str(exc)},

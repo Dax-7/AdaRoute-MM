@@ -17,6 +17,13 @@ EXPERIMENT_SUITE = [
     "adaroute_mm_full",
 ]
 
+V3_TEXT_BASIC_SUITE = [
+    "always_small",
+    "always_gemma",
+    "difficulty_routing",
+    "random_routing",
+]
+
 
 _BASE_V2_OVERRIDES: dict[str, Any] = {
     "vlm": {
@@ -29,6 +36,10 @@ _BASE_V2_OVERRIDES: dict[str, Any] = {
     },
     "fallback": {
         "enabled": False,
+        "quality_checks": {
+            "min_chars": 1,
+            "uncertainty_keywords": [],
+        },
     },
     "cache": {
         "enabled": False,
@@ -76,16 +87,47 @@ _MODE_OVERRIDES: dict[str, dict[str, Any]] = {
     },
 }
 
+_BASE_V3_TEXT_OVERRIDES: dict[str, Any] = {
+    "vlm": {
+        "enabled": False,
+        "skip_if_no_image": True,
+        "cache_enabled": False,
+    },
+    "router": {
+        "enabled": True,
+        "default_difficulty": "medium",
+        "allowed_labels": ["easy", "medium", "hard"],
+    },
+    "fallback": {
+        "enabled": False,
+    },
+    "cache": {
+        "enabled": False,
+        "cache_vlm": False,
+        "cache_router": False,
+        "cache_llm": False,
+    },
+    "runtime": {
+        "experiment_version": "v3_text",
+    },
+}
+
 
 def available_modes() -> list[str]:
     return list(_MODE_OVERRIDES)
 
 
-def resolve_mode_config(base_config: dict[str, Any], mode: str, output_dir: str | None = None) -> dict[str, Any]:
+def resolve_mode_config(
+    base_config: dict[str, Any],
+    mode: str,
+    output_dir: str | None = None,
+    experiment_version: str = "v2",
+) -> dict[str, Any]:
     if mode not in _MODE_OVERRIDES:
         raise ValueError(f"Unknown experiment mode: {mode}. Available modes: {', '.join(available_modes())}")
 
-    config = deep_merge(deepcopy(base_config), deepcopy(_BASE_V2_OVERRIDES))
+    base_overrides = _BASE_V3_TEXT_OVERRIDES if experiment_version in {"v3", "v3_text"} else _BASE_V2_OVERRIDES
+    config = deep_merge(deepcopy(base_config), deepcopy(base_overrides))
     config = deep_merge(config, deepcopy(_MODE_OVERRIDES[mode]))
     if output_dir:
         config = deep_merge(
@@ -105,6 +147,8 @@ def resolve_mode_config(base_config: dict[str, Any], mode: str, output_dir: str 
 
 
 def suite_modes(name: str) -> list[str]:
-    if name != "vqav2_yesno_ablation":
-        raise ValueError("Only suite 'vqav2_yesno_ablation' is currently defined")
-    return list(EXPERIMENT_SUITE)
+    if name == "vqav2_yesno_ablation":
+        return list(EXPERIMENT_SUITE)
+    if name == "text_fusion_v3_basic":
+        return list(V3_TEXT_BASIC_SUITE)
+    raise ValueError("Available suites: 'vqav2_yesno_ablation', 'text_fusion_v3_basic'")

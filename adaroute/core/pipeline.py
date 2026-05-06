@@ -36,6 +36,27 @@ class AdaRoutePipeline:
         if response is None:
             return {"stage": stage, "model": model_key, "latency": 0.0, "ok": True, "skipped": True}
         record = {"stage": stage, "model": model_key, "latency": response.latency, "ok": response.ok, "error": response.error}
+        if response.prompt_eval_count is not None:
+            record["prompt_eval_count"] = response.prompt_eval_count
+        if response.eval_count is not None:
+            record["eval_count"] = response.eval_count
+        if isinstance(response.raw, dict):
+            timing = {}
+            for key in ("total_duration", "load_duration", "prompt_eval_duration", "eval_duration"):
+                value = response.raw.get(key)
+                if isinstance(value, (int, float)):
+                    timing[f"{key}_s"] = value / 1_000_000_000
+            prompt_count = response.prompt_eval_count or response.raw.get("prompt_eval_count") or 0
+            decode_count = response.eval_count or response.raw.get("eval_count") or 0
+            prompt_time = timing.get("prompt_eval_duration_s", 0.0)
+            decode_time = timing.get("eval_duration_s", 0.0)
+            timing["inference_only_time_s"] = prompt_time + decode_time
+            timing["prefill_cost_per_token_s"] = prompt_time / prompt_count if prompt_count else 0.0
+            timing["decode_cost_per_token_s"] = decode_time / decode_count if decode_count else 0.0
+            timing["token_normalized_cost_s"] = (
+                prompt_count * timing["prefill_cost_per_token_s"] + decode_count * timing["decode_cost_per_token_s"]
+            )
+            record["timing"] = timing
         if isinstance(response.raw, dict) and response.raw.get("cached"):
             record["cached"] = True
         if isinstance(response.raw, dict) and response.raw.get("retried"):

@@ -25,6 +25,7 @@ def run_experiment(
     prompts_path: str = "configs/prompts_v2.yaml",
     experiments_dir: str = "data/experiments",
     resume: bool = True,
+    experiment_version: str = "v2",
 ) -> dict[str, Any]:
     run_name = run_id or default_run_id()
     mode_dir = ensure_dir(Path(experiments_dir) / run_name / mode)
@@ -32,7 +33,12 @@ def run_experiment(
     summary_path = mode_dir / "summary.json"
 
     base_config = load_config(config_path, override_config_path)
-    config = resolve_mode_config(base_config, mode, output_dir=str(mode_dir).replace("\\", "/"))
+    config = resolve_mode_config(
+        base_config,
+        mode,
+        output_dir=str(mode_dir).replace("\\", "/"),
+        experiment_version=experiment_version,
+    )
     prompts = load_prompts(prompts_path)
     write_yaml(mode_dir / "resolved_config.yaml", config)
 
@@ -48,6 +54,7 @@ def run_experiment(
     summary = compute_metrics(all_results)
     summary["experiment"] = {
         "mode": mode,
+        "version": experiment_version,
         "run_id": run_name,
         "dataset": dataset_path,
         "results_path": str(output_path),
@@ -64,4 +71,3 @@ def run_experiment(
         "processed": len(processed),
         "summary": summary,
     }
-
