@@ -1,0 +1,45 @@
+{
+  "version": "v3_1_text_fusion",
+  "seed": 42,
+  "streaming": true,
+  "component_counts": {
+    "arc_easy": 500,
+    "sciq": 500,
+    "arc_challenge": 500,
+    "drop_span": 500,
+    "verified_numeric": 100
+  },
+  "mix_counts": {
+    "arc_easy": 200,
+    "sciq": 200,
+    "arc_challenge": 400,
+    "drop_span": 100,
+    "verified_numeric": 100
+  },
+  "component_paths": {
+    "arc_easy": "data/datasets/v3_1_text_fusion/arc_easy_500.jsonl",
+    "sciq": "data/datasets/v3_1_text_fusion/sciq_500.jsonl",
+    "arc_challenge": "data/datasets/v3_1_text_fusion/arc_challenge_500.jsonl",
+    "drop_span": "data/datasets/v3_1_text_fusion/drop_span_500.jsonl",
+    "verified_numeric": "data/datasets/v3_1_text_fusion/verified_numeric_100.jsonl"
+  },
+  "fusion_path": "data/datasets/v3_1_text_fusion/fusion_v3_1_1000_200-200-400-100-100.jsonl",
+  "format": {
+    "required": [
+      "id",
+      "question",
+      "answer",
+      "image_path",
+      "task_type"
+    ],
+    "v3_1_added": [
+      "source",
+      "category",
+      "answer_type",
+      "answer_format",
+      "choices",
+      "choice_labels",
+      "metadata"
+    ]
+  }
+}

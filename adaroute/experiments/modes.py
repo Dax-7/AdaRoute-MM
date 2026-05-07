@@ -24,6 +24,13 @@ V3_TEXT_BASIC_SUITE = [
     "random_routing",
 ]
 
+V3_1_TEXT_BASIC_SUITE = [
+    "always_small",
+    "always_gemma",
+    "always_middle",
+    "difficulty_routing",
+]
+
 
 _BASE_V2_OVERRIDES: dict[str, Any] = {
     "vlm": {
@@ -61,6 +68,12 @@ _MODE_OVERRIDES: dict[str, dict[str, Any]] = {
         "routing": {
             "default_policy": "always_gemma",
             "policies": {"always_gemma": {"default": "gemma_large"}},
+        },
+    },
+    "always_middle": {
+        "routing": {
+            "default_policy": "always_medium",
+            "policies": {"always_medium": {"default": "phi3_medium"}},
         },
     },
     "random_routing": {
@@ -126,7 +139,7 @@ def resolve_mode_config(
     if mode not in _MODE_OVERRIDES:
         raise ValueError(f"Unknown experiment mode: {mode}. Available modes: {', '.join(available_modes())}")
 
-    base_overrides = _BASE_V3_TEXT_OVERRIDES if experiment_version in {"v3", "v3_text"} else _BASE_V2_OVERRIDES
+    base_overrides = _BASE_V3_TEXT_OVERRIDES if experiment_version in {"v3", "v3_text", "v3_1_text"} else _BASE_V2_OVERRIDES
     config = deep_merge(deepcopy(base_config), deepcopy(base_overrides))
     config = deep_merge(config, deepcopy(_MODE_OVERRIDES[mode]))
     if output_dir:
@@ -142,6 +155,7 @@ def resolve_mode_config(
                 },
             },
         )
+    config.setdefault("runtime", {})["experiment_version"] = experiment_version
     config.setdefault("runtime", {})["experiment_mode"] = mode
     return config
 
@@ -151,4 +165,6 @@ def suite_modes(name: str) -> list[str]:
         return list(EXPERIMENT_SUITE)
     if name == "text_fusion_v3_basic":
         return list(V3_TEXT_BASIC_SUITE)
-    raise ValueError("Available suites: 'vqav2_yesno_ablation', 'text_fusion_v3_basic'")
+    if name == "text_fusion_v3_1_basic":
+        return list(V3_1_TEXT_BASIC_SUITE)
+    raise ValueError("Available suites: 'vqav2_yesno_ablation', 'text_fusion_v3_basic', 'text_fusion_v3_1_basic'")

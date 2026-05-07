@@ -19,7 +19,9 @@ def _percentile(values: list[float], pct: float) -> float:
 def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
     total = len(results)
     successes = [r for r in results if r.get("status") == "success"]
+    failed = [r for r in results if r.get("status") != "success"]
     latencies = [float(r.get("latency", {}).get("total", 0.0)) for r in results]
+    success_latencies = [float(r.get("latency", {}).get("total", 0.0)) for r in successes]
     fallback_counts = [int(r.get("fallback", {}).get("count", 0)) for r in results]
     vlm_calls = [call for row in results for call in row.get("model_calls", []) if call.get("stage") == "vlm"]
     model_calls = [call for row in results for call in row.get("model_calls", []) if not call.get("skipped")]
@@ -42,13 +44,22 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
         "success_count": len(successes),
         "failed_count": total - len(successes),
         "success_rate": len(successes) / total if total else 0.0,
-        "average_latency": mean(latencies) if latencies else 0.0,
-        "p50_latency": _percentile(latencies, 0.50),
-        "p90_latency": _percentile(latencies, 0.90),
-        "p95_latency": _percentile(latencies, 0.95),
-        "average_vlm_latency": mean([float(r.get("latency", {}).get("vlm", 0.0)) for r in results]) if results else 0.0,
-        "average_router_latency": mean([float(r.get("latency", {}).get("router", 0.0)) for r in results]) if results else 0.0,
-        "average_llm_latency": mean([float(r.get("latency", {}).get("llm", 0.0)) for r in results]) if results else 0.0,
+        "average_latency": mean(success_latencies) if success_latencies else 0.0,
+        "p50_latency": _percentile(success_latencies, 0.50),
+        "p90_latency": _percentile(success_latencies, 0.90),
+        "p95_latency": _percentile(success_latencies, 0.95),
+        "average_latency_all_samples": mean(latencies) if latencies else 0.0,
+        "success_only_average_latency": mean(success_latencies) if success_latencies else 0.0,
+        "success_only_p50_latency": _percentile(success_latencies, 0.50),
+        "success_only_p90_latency": _percentile(success_latencies, 0.90),
+        "success_only_p95_latency": _percentile(success_latencies, 0.95),
+        "failed_latency_excluded_count": len(failed),
+        "average_vlm_latency": mean([float(r.get("latency", {}).get("vlm", 0.0)) for r in successes]) if successes else 0.0,
+        "average_router_latency": mean([float(r.get("latency", {}).get("router", 0.0)) for r in successes]) if successes else 0.0,
+        "average_llm_latency": mean([float(r.get("latency", {}).get("llm", 0.0)) for r in successes]) if successes else 0.0,
+        "average_vlm_latency_all_samples": mean([float(r.get("latency", {}).get("vlm", 0.0)) for r in results]) if results else 0.0,
+        "average_router_latency_all_samples": mean([float(r.get("latency", {}).get("router", 0.0)) for r in results]) if results else 0.0,
+        "average_llm_latency_all_samples": mean([float(r.get("latency", {}).get("llm", 0.0)) for r in results]) if results else 0.0,
         "fallback_rate": sum(1 for r in results if r.get("fallback", {}).get("triggered")) / total if total else 0.0,
         "average_fallback_count": mean(fallback_counts) if fallback_counts else 0.0,
         "vlm_call_count": len(vlm_calls),
@@ -63,6 +74,10 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
     }
     timed_calls = [call for call in model_calls if isinstance(call.get("timing"), dict)]
     timed_llm_calls = [call for call in llm_calls if isinstance(call.get("timing"), dict)]
+    success_model_calls = [call for row in successes for call in row.get("model_calls", []) if not call.get("skipped")]
+    success_llm_calls = [call for call in success_model_calls if call.get("stage") == "llm"]
+    success_timed_calls = [call for call in success_model_calls if isinstance(call.get("timing"), dict)]
+    success_timed_llm_calls = [call for call in success_llm_calls if isinstance(call.get("timing"), dict)]
     for label, calls in (("all_model_calls", timed_calls), ("llm_calls", timed_llm_calls)):
         summary[f"{label}_inference_only_time"] = (
             sum(float(call["timing"].get("inference_only_time_s", 0.0)) for call in calls) if calls else 0.0
@@ -78,6 +93,13 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
         )
         summary[f"{label}_average_decode_cost_per_token"] = (
             mean([float(call["timing"].get("decode_cost_per_token_s", 0.0)) for call in calls]) if calls else 0.0
+        )
+    for label, calls in (("success_only_all_model_calls", success_timed_calls), ("success_only_llm_calls", success_timed_llm_calls)):
+        summary[f"{label}_average_inference_only_time"] = (
+            mean([float(call["timing"].get("inference_only_time_s", 0.0)) for call in calls]) if calls else 0.0
+        )
+        summary[f"{label}_token_normalized_cost"] = (
+            sum(float(call["timing"].get("token_normalized_cost_s", 0.0)) for call in calls) if calls else 0.0
         )
     summary["prompt_eval_tokens"] = sum(int(call.get("prompt_eval_count") or 0) for call in model_calls)
     summary["decode_tokens"] = sum(int(call.get("eval_count") or 0) for call in model_calls)

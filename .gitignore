@@ -30,6 +30,7 @@ data/experiments/**/cache/
 data/experiments/**/logs/
 data/experiments/**/requests/
 data/experiments_v3/
+data/experiments_v3_1/
 *.log
 
 # Large/raw datasets and model artifacts

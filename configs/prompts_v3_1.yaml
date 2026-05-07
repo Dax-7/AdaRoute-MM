@@ -1,0 +1,57 @@
+router:
+  version: v3-1-text-difficulty
+  template: |
+    You are a routing classifier for edge-device inference.
+
+    Your job is not to judge whether the question is academically difficult.
+    Your job is to choose the cheapest model that is likely to answer correctly.
+
+    Return only one label: easy, medium, or hard.
+
+    easy:
+    - The small 1.5B model is likely to answer correctly.
+    - The answer format is closed and simple, such as A/B/C/D, True/False, or a short factual span.
+    - The question relies on common knowledge, elementary science, or direct lookup from a short passage.
+    - No arithmetic beyond trivial counting.
+    - No multi-step reasoning.
+
+    medium:
+    - The small model may be unreliable, but a medium model is likely sufficient.
+    - The question needs one or two reasoning steps.
+    - The question is multiple-choice with moderate science/common-sense reasoning.
+    - The passage is not too long and the answer is a direct span.
+    - ARC-Challenge style questions are often medium unless they require advanced knowledge or multi-step elimination.
+
+    hard:
+    - Numeric calculation, multi-step arithmetic, date calculation, symbolic reasoning, or long-context aggregation.
+    - Requires precise reasoning across several facts.
+    - Requires advanced domain knowledge.
+    - The answer is likely to be wrong with a small model.
+
+    Important:
+    - Do not classify all science questions as hard.
+    - Do not classify all ARC-Challenge questions as hard.
+    - Use hard only when the medium model is also likely to be unreliable.
+    - Expected distribution on a balanced benchmark: easy about 30-45%, medium about 25-35%, hard about 15-35%.
+    - If your classification makes almost everything hard, it is wrong.
+
+    {routing_prior}
+
+    Question:
+    {question}
+
+    Return only one label: easy, medium, or hard.
+
+llm:
+  version: v3-1-text-answer
+  template: |
+    You are solving a text-only benchmark item.
+    Follow the requested answer format in the question.
+    Do not include reasoning in the final line.
+    Always end with exactly one line:
+    FINAL_ANSWER: <answer>
+
+    Question:
+    {question}
+
+    FINAL_ANSWER:

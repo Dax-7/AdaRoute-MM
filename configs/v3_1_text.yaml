@@ -1,0 +1,35 @@
+runtime:
+  experiment_version: v3_1_text
+
+vlm:
+  enabled: false
+  skip_if_no_image: true
+  cache_enabled: false
+
+router:
+  enabled: true
+  default_difficulty: medium
+  allowed_labels:
+    - easy
+    - medium
+    - hard
+  use_source_prior: true
+  answer_type_priors:
+    numeric: hard
+  source_priors:
+    mib-bench/arc_easy: usually_easy
+    allenai/sciq: easy_or_medium
+    mib-bench/arc_challenge: medium_or_hard
+    ucinlp/drop: medium_or_hard_span
+
+fallback:
+  enabled: false
+  quality_checks:
+    min_chars: 1
+    uncertainty_keywords: []
+
+cache:
+  enabled: false
+  cache_vlm: false
+  cache_router: false
+  cache_llm: false

@@ -37,6 +37,10 @@ def run_batch(
                     image_path=row.get("image_path"),
                     task_type=row.get("task_type", "auto"),
                     request_id=sample_id,
+                    source=row.get("source"),
+                    answer_type=row.get("answer_type"),
+                    category=row.get("category"),
+                    metadata=row.get("metadata", {}),
                 ),
                 policy_name=policy,
             )

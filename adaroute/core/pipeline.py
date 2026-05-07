@@ -89,7 +89,14 @@ class AdaRoutePipeline:
         difficulty = self.config.get("router", {}).get("default_difficulty", "中等")
         router_error = None
         try:
-            difficulty, router_response, router_error = self.router.run(inference_input.question, caption_text)
+            difficulty, router_response, router_error = self.router.run(
+                inference_input.question,
+                caption_text,
+                source=inference_input.source,
+                answer_type=inference_input.answer_type,
+                category=inference_input.category,
+                metadata=inference_input.metadata,
+            )
             if router_response is not None:
                 latency["router"] = router_response.latency
                 model_calls.append(self._call_record("router", self.config.get("router", {}).get("model", "router_small"), router_response))

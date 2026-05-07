@@ -8,7 +8,7 @@ from typing import Any
 
 from datasets import load_dataset
 
-from adaroute.utils.io import ensure_dir, write_json
+from adaroute.utils.io import ensure_dir, read_jsonl, write_json
 
 
 DEFAULT_COMPONENT_COUNTS = {
@@ -25,6 +25,21 @@ DEFAULT_MIX_COUNTS = {
     "mmlu_pro": 200,
     "bbh": 200,
     "drop": 100,
+}
+
+DEFAULT_V3_1_COMPONENT_COUNTS = {
+    "arc_easy": 500,
+    "sciq": 500,
+    "arc_challenge": 500,
+    "drop_span": 500,
+}
+
+DEFAULT_V3_1_MIX_COUNTS = {
+    "arc_easy": 200,
+    "sciq": 200,
+    "arc_challenge": 400,
+    "drop_span": 100,
+    "verified_numeric": 100,
 }
 
 BBH_TASKS = [
@@ -50,6 +65,20 @@ class DatasetBuildConfig:
     bbh_split: str = "test"
     drop_split: str = "train"
     streaming: bool = True
+
+
+@dataclass(frozen=True)
+class DatasetBuildConfigV31:
+    output_dir: str = "data/datasets/v3_1_text_fusion"
+    seed: int = 42
+    component_counts: dict[str, int] | None = None
+    mix_counts: dict[str, int] | None = None
+    arc_easy_split: str = "train"
+    arc_challenge_split: str = "train"
+    sciq_split: str = "train"
+    drop_split: str = "train"
+    streaming: bool = True
+    verified_numeric_path: str | None = None
 
 
 def _jsonl_write(path: Path, rows: Iterable[dict[str, Any]]) -> int:
@@ -147,6 +176,72 @@ def convert_arc_challenge(split: str = "train", limit: int = 500, streaming: boo
                 answer_type="multiple_choice",
                 choices=choices,
                 metadata={"arc_id": item.get("arc_id")},
+            )
+
+    return _take(rows(), limit)
+
+
+def convert_arc_easy(split: str = "train", limit: int = 500, streaming: bool = True) -> list[dict[str, Any]]:
+    dataset = load_dataset("mib-bench/arc_easy", split=split, streaming=streaming)
+
+    def rows() -> Iterable[dict[str, Any]]:
+        for idx, item in enumerate(dataset):
+            choices, labels = _choice_texts(item.get("choices"))
+            if not choices:
+                continue
+            answer_key = item.get("label")
+            if answer_key is None and item.get("answerKey") is not None:
+                answer_key = MC_LABELS[int(item["answerKey"])]
+            if answer_key is None:
+                continue
+            label_map = {str(label): MC_LABELS[i] for i, label in enumerate(labels or MC_LABELS[: len(choices)])}
+            answer = label_map.get(str(answer_key), str(answer_key))
+            question = (
+                f"{item.get('question', '').strip()}\n\nOptions:\n{_format_options(choices)}\n\n"
+                "Answer with the option letter only."
+            )
+            yield _base_row(
+                sample_id=f"arc_easy_{item.get('idx', idx)}",
+                source="mib-bench/arc_easy",
+                category="arc_easy",
+                question=question,
+                answer=answer,
+                answer_type="multiple_choice",
+                choices=choices,
+                metadata={"arc_id": item.get("arc_id")},
+            )
+
+    return _take(rows(), limit)
+
+
+def convert_sciq(split: str = "train", limit: int = 500, streaming: bool = True, seed: int = 42) -> list[dict[str, Any]]:
+    dataset = load_dataset("allenai/sciq", split=split, streaming=streaming)
+
+    def rows() -> Iterable[dict[str, Any]]:
+        for idx, item in enumerate(dataset):
+            correct = str(item.get("correct_answer") or "").strip()
+            distractors = [str(item.get(f"distractor{i}") or "").strip() for i in range(1, 4)]
+            choices = [choice for choice in [correct, *distractors] if choice]
+            if not correct or len(choices) < 2:
+                continue
+            rng = random.Random(f"{seed}:{idx}")
+            rng.shuffle(choices)
+            answer = MC_LABELS[choices.index(correct)]
+            support = str(item.get("support") or "").strip()
+            prefix = f"Support:\n{support}\n\n" if support else ""
+            question = (
+                f"{prefix}Question:\n{item.get('question', '').strip()}\n\n"
+                f"Options:\n{_format_options(choices)}\n\nAnswer with the option letter only."
+            )
+            yield _base_row(
+                sample_id=f"sciq_{idx}",
+                source="allenai/sciq",
+                category="sciq",
+                question=question,
+                answer=answer,
+                answer_type="multiple_choice",
+                choices=choices,
+                metadata={"correct_answer_text": correct, "has_support": bool(support)},
             )
 
     return _take(rows(), limit)
@@ -280,6 +375,38 @@ def convert_drop(split: str = "train", limit: int = 500, streaming: bool = True)
     return _take(rows(), limit)
 
 
+def convert_drop_span(split: str = "train", limit: int = 500, streaming: bool = True) -> list[dict[str, Any]]:
+    dataset = load_dataset("ucinlp/drop", split=split, streaming=streaming)
+
+    def rows() -> Iterable[dict[str, Any]]:
+        for idx, item in enumerate(dataset):
+            spans = (item.get("answers_spans") or {}).get("spans") or []
+            if not spans:
+                continue
+            answer = str(spans[0]).strip()
+            if not answer:
+                continue
+            is_numeric = answer.replace(",", "").replace(".", "", 1).isdigit()
+            if is_numeric:
+                continue
+            question = (
+                f"Passage:\n{item.get('passage', '').strip()}\n\n"
+                f"Question:\n{item.get('question', '').strip()}\n\n"
+                "Answer with the shortest exact answer."
+            )
+            yield _base_row(
+                sample_id=f"drop_span_{item.get('query_id', idx)}",
+                source="ucinlp/drop",
+                category=item.get("section_id"),
+                question=question,
+                answer=answer,
+                answer_type="short_text",
+                metadata={"all_spans": [str(span) for span in spans], "drop_answer_subset": "span"},
+            )
+
+    return _take(rows(), limit)
+
+
 def build_components(config: DatasetBuildConfig) -> dict[str, list[dict[str, Any]]]:
     counts = config.component_counts or DEFAULT_COMPONENT_COUNTS
     bbh_per_task = max(1, counts.get("bbh", 500) // len(BBH_TASKS))
@@ -332,3 +459,72 @@ def build_fusion_dataset(config: DatasetBuildConfig) -> dict[str, Any]:
     write_json(output_dir / "manifest.json", manifest)
     return manifest
 
+
+def build_components_v3_1(config: DatasetBuildConfigV31) -> dict[str, list[dict[str, Any]]]:
+    counts = config.component_counts or DEFAULT_V3_1_COMPONENT_COUNTS
+    return {
+        "arc_easy": convert_arc_easy(config.arc_easy_split, counts.get("arc_easy", 500), config.streaming),
+        "sciq": convert_sciq(config.sciq_split, counts.get("sciq", 500), config.streaming, seed=config.seed),
+        "arc_challenge": convert_arc_challenge(
+            config.arc_challenge_split,
+            counts.get("arc_challenge", 500),
+            config.streaming,
+        ),
+        "drop_span": convert_drop_span(config.drop_split, counts.get("drop_span", 500), config.streaming),
+    }
+
+
+def build_fusion_dataset_v3_1(config: DatasetBuildConfigV31) -> dict[str, Any]:
+    output_dir = ensure_dir(config.output_dir)
+    rng = random.Random(config.seed)
+    components = build_components_v3_1(config)
+    mix_counts = config.mix_counts or DEFAULT_V3_1_MIX_COUNTS
+
+    verified_path = Path(config.verified_numeric_path) if config.verified_numeric_path else output_dir / "verified_numeric_100.jsonl"
+    if mix_counts.get("verified_numeric", 0):
+        if not verified_path.exists():
+            raise FileNotFoundError(
+                f"Verified numeric component not found: {verified_path}. "
+                "Run scripts/v3_1_select_verified_numeric.py first or pass --verified-numeric."
+            )
+        components["verified_numeric"] = _take(read_jsonl(verified_path), mix_counts.get("verified_numeric", 100))
+
+    def display_path(path: Path) -> str:
+        return path.as_posix()
+
+    component_paths: dict[str, str] = {}
+    for name, rows in components.items():
+        default_count = 100 if name == "verified_numeric" else 500
+        path = output_dir / f"{name}_{default_count}.jsonl"
+        if name == "verified_numeric" and Path(path).resolve() == verified_path.resolve():
+            component_paths[name] = display_path(path)
+            continue
+        _jsonl_write(path, rows)
+        component_paths[name] = display_path(path)
+
+    mixed_rows: list[dict[str, Any]] = []
+    for name, count in mix_counts.items():
+        rows = list(components.get(name, []))
+        if len(rows) < count:
+            raise ValueError(f"Dataset component '{name}' has {len(rows)} rows, below requested mix count {count}")
+        mixed_rows.extend(rows[:count])
+    rng.shuffle(mixed_rows)
+
+    fusion_path = output_dir / "fusion_v3_1_1000_200-200-400-100-100.jsonl"
+    _jsonl_write(fusion_path, mixed_rows)
+
+    manifest = {
+        "version": "v3_1_text_fusion",
+        "seed": config.seed,
+        "streaming": config.streaming,
+        "component_counts": {name: len(rows) for name, rows in components.items()},
+        "mix_counts": mix_counts,
+        "component_paths": component_paths,
+        "fusion_path": display_path(fusion_path),
+        "format": {
+            "required": ["id", "question", "answer", "image_path", "task_type"],
+            "v3_1_added": ["source", "category", "answer_type", "answer_format", "choices", "choice_labels", "metadata"],
+        },
+    }
+    write_json(output_dir / "manifest.json", manifest)
+    return manifest

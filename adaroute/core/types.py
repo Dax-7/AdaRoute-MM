@@ -10,6 +10,10 @@ class InferenceInput:
     image_path: Optional[str] = None
     task_type: str = "auto"
     request_id: Optional[str] = None
+    source: Optional[str] = None
+    answer_type: Optional[str] = None
+    category: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 @dataclass

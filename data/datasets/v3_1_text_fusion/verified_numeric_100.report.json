@@ -1,0 +1,22 @@
+{
+  "dataset": "data/datasets/v3_text_fusion/fusion_1000_200-300-200-200-100.jsonl",
+  "small_results": "data/experiments_v3/v3_result_1/always_small/results_small.jsonl",
+  "gemma_results": "data/experiments_v3/v3_result_1/always_gemma/results_gemma.jsonl",
+  "route_results": "data/experiments_v3/v3_result_1/difficulty_routing/resultsdifficulty.jsonl",
+  "output": "data/datasets/v3_1_text_fusion/verified_numeric_100.jsonl",
+  "target_size": 100,
+  "selected_size": 100,
+  "verified_available": 90,
+  "filler_available": 249,
+  "selected_bucket_counts": {
+    "verified_numeric": 90,
+    "gsm8k_numeric_filler": 10
+  },
+  "selected_source_counts": {
+    "meta-math/GSM8K_zh": 61,
+    "ucinlp/drop": 39
+  },
+  "removed_reason_counts": {
+    "not_verified_numeric": 41
+  }
+}
