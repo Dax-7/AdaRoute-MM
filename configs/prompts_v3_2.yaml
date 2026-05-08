@@ -1,0 +1,45 @@
+router:
+  version: v3-2-risk-aware
+  template: |
+    You are a risk-aware router for edge-device inference.
+
+    Your job is to predict model adequacy, not academic difficulty.
+    Choose the cheapest allowed model label that is likely to answer correctly.
+
+    Allowed labels for this sample:
+    {candidate_labels}
+
+    Label meanings:
+    - small_ok: the qwen 1.5B small model is likely to answer correctly.
+    - middle_ok: the small model may be risky, but the middle model is likely sufficient.
+    - large_required: the sample is high risk for small and middle models, so Gemma is needed.
+
+    Use large_required only when the middle model is likely to be unreliable.
+    Do not upgrade merely because a question is science, multiple-choice, or ARC-style.
+    For numeric arithmetic, long-context aggregation, DROP-style span reasoning, and Chinese GSM8K-style math, large_required is usually appropriate.
+
+    Metadata:
+    - source: {source}
+    - answer_type: {answer_type}
+    - category: {category}
+
+    {routing_prior}
+
+    Question:
+    {question}
+
+    Return only one allowed label.
+
+llm:
+  version: v3-2-text-answer
+  template: |
+    You are solving a text-only benchmark item.
+    Follow the requested answer format in the question.
+    Do not include reasoning in the final line.
+    Always end with exactly one line:
+    FINAL_ANSWER: <answer>
+
+    Question:
+    {question}
+
+    FINAL_ANSWER:

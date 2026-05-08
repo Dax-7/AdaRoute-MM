@@ -88,8 +88,9 @@ class AdaRoutePipeline:
 
         difficulty = self.config.get("router", {}).get("default_difficulty", "中等")
         router_error = None
+        route_info: dict[str, Any] = {}
         try:
-            difficulty, router_response, router_error = self.router.run(
+            difficulty, router_response, router_error, route_info = self.router.run(
                 inference_input.question,
                 caption_text,
                 source=inference_input.source,
@@ -151,6 +152,10 @@ class AdaRoutePipeline:
                 "policy": decision.policy,
                 "initial_model": decision.selected_model,
                 "final_model": final_model_key,
+                "route_source": route_info.get("route_source"),
+                "route_reason": route_info.get("route_reason"),
+                "static_gate": route_info.get("static_gate", False),
+                "dynamic_gate": route_info.get("dynamic_gate", False),
             },
             "fallback": fallback_info,
             "latency": latency,
