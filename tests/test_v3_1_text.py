@@ -49,12 +49,11 @@ def test_router_numeric_prior_skips_model_call():
         def call_model(self, *args, **kwargs):
             raise AssertionError("numeric prior should not call router model")
 
-    difficulty, response, error, route_info = RouterModule(config, prompts, Client()).run("1+1?", "", answer_type="numeric")
+    difficulty, response, error = RouterModule(config, prompts, Client()).run("1+1?", "", answer_type="numeric")
 
     assert difficulty == "hard"
     assert response is None
     assert error is None
-    assert route_info["route_source"] == "direct_prior"
 
 
 def test_metrics_default_latency_excludes_failed_samples():

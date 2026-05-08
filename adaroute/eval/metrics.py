@@ -29,12 +29,6 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
     cached_vlm_calls = [call for call in vlm_calls if call.get("cached")]
     unique_images = {row.get("input", {}).get("image_path") for row in results if row.get("input", {}).get("image_path")}
     with_answer = [r for r in results if r.get("reference_answer")]
-    final_models = [r.get("route", {}).get("final_model") or r.get("model_used") for r in results]
-    model_switch_count = sum(1 for previous, current in zip(final_models, final_models[1:]) if previous != current)
-    route_reasons = [r.get("route", {}).get("route_reason") for r in results if r.get("route", {}).get("route_reason")]
-    static_gate_count = sum(1 for r in results if r.get("route", {}).get("static_gate"))
-    dynamic_gate_count = sum(1 for r in results if r.get("route", {}).get("dynamic_gate"))
-    model_usage = Counter(final_models)
     exact = 0
     contains = 0
     for row in with_answer:
@@ -73,17 +67,7 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
         "vlm_cache_hit_rate": len(cached_vlm_calls) / len(vlm_calls) if vlm_calls else 0.0,
         "unique_image_count": len(unique_images),
         "vlm_calls_per_sample": len(vlm_calls) / total if total else 0.0,
-        "model_usage_distribution": dict(model_usage),
-        "small_usage_rate": model_usage.get("qwen_small", 0) / total if total else 0.0,
-        "middle_usage_rate": model_usage.get("phi3_medium", 0) / total if total else 0.0,
-        "gemma_usage_rate": model_usage.get("gemma_large", 0) / total if total else 0.0,
-        "static_gate_count": static_gate_count,
-        "static_gate_rate": static_gate_count / total if total else 0.0,
-        "dynamic_gate_count": dynamic_gate_count,
-        "dynamic_gate_rate": dynamic_gate_count / total if total else 0.0,
-        "model_switch_count": model_switch_count,
-        "model_switch_rate": model_switch_count / (total - 1) if total > 1 else 0.0,
-        "route_reason_distribution": dict(Counter(route_reasons)),
+        "model_usage_distribution": dict(Counter(r.get("route", {}).get("final_model") or r.get("model_used") for r in results)),
         "difficulty_distribution": dict(Counter(r.get("route", {}).get("difficulty") for r in results)),
         "exact_match": exact / len(with_answer) if with_answer else None,
         "contains_answer": contains / len(with_answer) if with_answer else None,
@@ -151,22 +135,6 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
                     if group_eval
                     else 0.0,
                 }
-        summary["text_answer"]["routing_by_source"] = {}
-        for group_value in sorted({str(row.get("source") or "unknown") for row in text_eval_rows}):
-            group_rows = [row for row in text_eval_rows if str(row.get("source") or "unknown") == group_value]
-            group_scored = [score_text_answer(row) for row in group_rows]
-            group_eval = [item for item in group_scored if item.get("evaluated")]
-            summary["text_answer"]["routing_by_source"][group_value] = {
-                "total": len(group_eval),
-                "accuracy": sum(1 for item in group_eval if item.get("correct")) / len(group_eval) if group_eval else 0.0,
-                "model_usage_distribution": dict(
-                    Counter(row.get("route", {}).get("final_model") or row.get("model_used") for row in group_rows)
-                ),
-                "route_label_distribution": dict(Counter(row.get("route", {}).get("difficulty") for row in group_rows)),
-                "route_reason_distribution": dict(
-                    Counter(row.get("route", {}).get("route_reason") for row in group_rows if row.get("route", {}).get("route_reason"))
-                ),
-            }
     if any(row.get("answer_type") in {"yes/no", "yes_no"} for row in results):
         summary["yesno"] = compute_yesno_metrics(results)
     return summary

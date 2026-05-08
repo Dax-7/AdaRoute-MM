@@ -31,23 +31,6 @@ V3_1_TEXT_BASIC_SUITE = [
     "difficulty_routing",
 ]
 
-V3_2_TEXT_BASIC_SUITE = [
-    "always_small",
-    "always_middle",
-    "always_gemma",
-    "risk_static_routing",
-    "risk_dynamic_routing",
-]
-
-V3_2_TEXT_WITH_LEGACY_SUITE = [
-    "always_small",
-    "always_middle",
-    "always_gemma",
-    "difficulty_routing",
-    "risk_static_routing",
-    "risk_dynamic_routing",
-]
-
 
 _BASE_V2_OVERRIDES: dict[str, Any] = {
     "vlm": {
@@ -99,14 +82,6 @@ _MODE_OVERRIDES: dict[str, dict[str, Any]] = {
     "difficulty_routing": {
         "routing": {"default_policy": "difficulty_based"},
     },
-    "risk_static_routing": {
-        "routing": {"default_policy": "difficulty_based"},
-        "router": {"risk_gate": {"enabled": True, "static_only": True}},
-    },
-    "risk_dynamic_routing": {
-        "routing": {"default_policy": "difficulty_based"},
-        "router": {"risk_gate": {"enabled": True, "static_only": False}},
-    },
     "difficulty_cache": {
         "routing": {"default_policy": "difficulty_based"},
         "cache": {"enabled": True, "cache_vlm": True},
@@ -150,37 +125,6 @@ _BASE_V3_TEXT_OVERRIDES: dict[str, Any] = {
     },
 }
 
-_BASE_V3_2_TEXT_OVERRIDES: dict[str, Any] = {
-    "vlm": {
-        "enabled": False,
-        "skip_if_no_image": True,
-        "cache_enabled": False,
-    },
-    "router": {
-        "enabled": True,
-        "default_difficulty": "middle_ok",
-        "allowed_labels": ["small_ok", "middle_ok", "large_required"],
-        "risk_gate": {
-            "enabled": True,
-            "static_only": True,
-            "default_label": "middle_ok",
-            "allowed_labels": ["small_ok", "middle_ok", "large_required"],
-        },
-    },
-    "fallback": {
-        "enabled": False,
-    },
-    "cache": {
-        "enabled": False,
-        "cache_vlm": False,
-        "cache_router": False,
-        "cache_llm": False,
-    },
-    "runtime": {
-        "experiment_version": "v3_2_text",
-    },
-}
-
 
 def available_modes() -> list[str]:
     return list(_MODE_OVERRIDES)
@@ -195,12 +139,7 @@ def resolve_mode_config(
     if mode not in _MODE_OVERRIDES:
         raise ValueError(f"Unknown experiment mode: {mode}. Available modes: {', '.join(available_modes())}")
 
-    if experiment_version == "v3_2_text":
-        base_overrides = _BASE_V3_2_TEXT_OVERRIDES
-    elif experiment_version in {"v3", "v3_text", "v3_1_text"}:
-        base_overrides = _BASE_V3_TEXT_OVERRIDES
-    else:
-        base_overrides = _BASE_V2_OVERRIDES
+    base_overrides = _BASE_V3_TEXT_OVERRIDES if experiment_version in {"v3", "v3_text", "v3_1_text"} else _BASE_V2_OVERRIDES
     config = deep_merge(deepcopy(base_config), deepcopy(base_overrides))
     config = deep_merge(config, deepcopy(_MODE_OVERRIDES[mode]))
     if output_dir:
@@ -228,11 +167,4 @@ def suite_modes(name: str) -> list[str]:
         return list(V3_TEXT_BASIC_SUITE)
     if name == "text_fusion_v3_1_basic":
         return list(V3_1_TEXT_BASIC_SUITE)
-    if name == "text_fusion_v3_2_basic":
-        return list(V3_2_TEXT_BASIC_SUITE)
-    if name == "text_fusion_v3_2_with_legacy":
-        return list(V3_2_TEXT_WITH_LEGACY_SUITE)
-    raise ValueError(
-        "Available suites: 'vqav2_yesno_ablation', 'text_fusion_v3_basic', "
-        "'text_fusion_v3_1_basic', 'text_fusion_v3_2_basic', 'text_fusion_v3_2_with_legacy'"
-    )
+    raise ValueError("Available suites: 'vqav2_yesno_ablation', 'text_fusion_v3_basic', 'text_fusion_v3_1_basic'")
