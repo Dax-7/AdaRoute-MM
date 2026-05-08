@@ -72,6 +72,18 @@ def compute_metrics(results: list[dict[str, Any]]) -> dict[str, Any]:
         "exact_match": exact / len(with_answer) if with_answer else None,
         "contains_answer": contains / len(with_answer) if with_answer else None,
     }
+    summary["model_usage_by_source"] = {}
+    summary["difficulty_by_source"] = {}
+    summary["model_usage_by_answer_type"] = {}
+    for group_key, output_key in (("source", "model_usage_by_source"), ("answer_type", "model_usage_by_answer_type")):
+        for group_value in sorted({str(row.get(group_key) or "unknown") for row in results}):
+            group_rows = [row for row in results if str(row.get(group_key) or "unknown") == group_value]
+            summary[output_key][group_value] = dict(
+                Counter(row.get("route", {}).get("final_model") or row.get("model_used") for row in group_rows)
+            )
+    for group_value in sorted({str(row.get("source") or "unknown") for row in results}):
+        group_rows = [row for row in results if str(row.get("source") or "unknown") == group_value]
+        summary["difficulty_by_source"][group_value] = dict(Counter(row.get("route", {}).get("difficulty") for row in group_rows))
     timed_calls = [call for call in model_calls if isinstance(call.get("timing"), dict)]
     timed_llm_calls = [call for call in llm_calls if isinstance(call.get("timing"), dict)]
     success_model_calls = [call for row in successes for call in row.get("model_calls", []) if not call.get("skipped")]

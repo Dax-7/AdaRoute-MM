@@ -16,8 +16,9 @@ from adaroute.utils.io import load_config
 def main() -> None:
     parser = argparse.ArgumentParser(description="Check required local Ollama models.")
     parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument("--override-config", default=None)
     args = parser.parse_args()
-    config = load_config(args.config)
+    config = load_config(args.config, args.override_config)
     base_url = config.get("ollama", {}).get("base_url", "http://localhost:11434").rstrip("/")
     try:
         response = requests.get(f"{base_url}/api/tags", timeout=10)
@@ -35,3 +36,7 @@ def main() -> None:
             print(f"  ollama pull {model}")
         raise SystemExit(2)
     print("All configured Ollama models are available.")
+
+
+if __name__ == "__main__":
+    main()

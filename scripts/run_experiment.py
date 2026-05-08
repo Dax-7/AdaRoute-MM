@@ -13,7 +13,7 @@ from adaroute.experiments.runner import run_experiment
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run one AdaRoute-MM v2 experiment mode.")
+    parser = argparse.ArgumentParser(description="Run one AdaRoute-MM experiment mode.")
     parser.add_argument("--mode", required=True, choices=available_modes())
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--run-id", default=None)
@@ -21,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--override-config", default=None)
     parser.add_argument("--prompts", default="configs/prompts_v2.yaml")
+    parser.add_argument("--experiment-version", default="v2")
     parser.add_argument("--no-resume", action="store_true")
     return parser
 
@@ -36,6 +37,7 @@ def main() -> None:
         prompts_path=args.prompts,
         experiments_dir=args.experiments_dir,
         resume=not args.no_resume,
+        experiment_version=args.experiment_version,
     )
     print(f"Mode: {result['mode']}")
     print(f"Processed: {result['processed']}")

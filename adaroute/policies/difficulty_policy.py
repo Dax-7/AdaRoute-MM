@@ -11,9 +11,12 @@ DIFFICULTY_TO_CONFIG_KEY = {
     "简单": "simple",
     "中等": "medium",
     "困难": "hard",
-    "ç» â‚¬é—?": "simple",
-    "æ¶“î… ç“‘": "medium",
-    "é¥ä¼´æ¯¦": "hard",
+    "绠€鍗?": "simple",
+    "涓瓑": "medium",
+    "鍥伴毦": "hard",
+    "莽禄聽芒鈥毬┞嶁€?": "simple",
+    "忙露鈥溍€β犆р€溾€?": "medium",
+    "茅聧楼盲录麓忙炉娄": "hard",
 }
 
 

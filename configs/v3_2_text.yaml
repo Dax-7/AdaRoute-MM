@@ -1,0 +1,85 @@
+runtime:
+  experiment_version: v3_2_text
+
+models:
+  qwen_small:
+    provider: ollama
+    model_name: qwen2.5:1.5b-instruct-q4_1
+    role: llm
+    size_level: small
+    supports_vision: false
+    timeout: 60
+
+vlm:
+  enabled: false
+  skip_if_no_image: true
+  cache_enabled: false
+
+router:
+  enabled: true
+  model: router_small
+  default_difficulty: medium
+  allowed_labels:
+    - easy
+    - medium
+    - hard
+  use_source_prior: true
+  answer_type_priors:
+    numeric: hard
+  source_priors:
+    mib-bench/arc_easy: risk_bounded_small_or_middle
+    allenai/sciq: risk_bounded_small_or_middle
+    mib-bench/arc_challenge: risk_bounded_middle
+    ucinlp/drop: high_risk_gemma
+    meta-math/GSM8K_zh: high_risk_gemma
+  risk_aware_static_gate:
+    enabled: true
+    model_gate_enabled: false
+    fallback_difficulty: medium
+    direct_answer_type_priors:
+      numeric: hard
+    direct_source_priors:
+      ucinlp/drop: hard
+      meta-math/GSM8K_zh: hard
+    hard_cues:
+      - " except"
+      - " not "
+      - "least likely"
+      - "best explains"
+      - "calculate"
+      - "infer from passage"
+      - "two-step"
+      - "according to the passage"
+    source_rules:
+      allenai/sciq:
+        simple_difficulty: easy
+        default_difficulty: medium
+        max_simple_chars: 600
+        allow_hard_on_cue: false
+      mib-bench/arc_easy:
+        simple_difficulty: easy
+        default_difficulty: medium
+        max_simple_chars: 600
+        allow_hard_on_cue: false
+      mib-bench/arc_challenge:
+        default_difficulty: medium
+        allow_hard_on_cue: false
+
+routing:
+  policies:
+    difficulty_based:
+      simple: qwen_small
+      medium: phi3_medium
+      hard: gemma_large
+
+fallback:
+  enabled: false
+  quality_checks:
+    min_chars: 1
+    uncertainty_keywords: []
+
+cache:
+  enabled: false
+  cache_vlm: false
+  cache_router: false
+  cache_llm: false

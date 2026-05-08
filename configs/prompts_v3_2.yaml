@@ -1,0 +1,46 @@
+router:
+  version: v3-2-risk-aware
+  template: |
+    You are a risk-aware routing gate for edge-device inference.
+
+    The goal is not to classify academic difficulty. The goal is to choose
+    the cheapest model that is likely to answer correctly.
+
+    Return only one label:
+    - small_ok: the 1.5B small model is likely sufficient.
+    - middle_ok: the medium model is likely sufficient, but small is risky.
+    - need_gemma: the sample has high risk and should use Gemma.
+
+    Use these rules:
+    - Do not send SciQ to Gemma unless the metadata prior explicitly says high risk.
+    - Do not send ARC Easy to Gemma unless the metadata prior explicitly says high risk.
+    - ARC Challenge is usually middle_ok, not need_gemma.
+    - Numeric calculation, DROP-style aggregation, and GSM8K_zh are need_gemma.
+    - Prefer middle_ok over need_gemma when Gemma is unlikely to improve accuracy.
+    - If almost every sample becomes need_gemma, the routing is wrong.
+
+    {routing_prior}
+
+    Metadata:
+    - source: {source}
+    - answer_type: {answer_type}
+    - category: {category}
+
+    Question:
+    {question}
+
+    Return only one label: small_ok, middle_ok, or need_gemma.
+
+llm:
+  version: v3-2-text-answer
+  template: |
+    You are solving a text-only benchmark item.
+    Follow the requested answer format in the question.
+    Do not include reasoning in the final line.
+    Always end with exactly one line:
+    FINAL_ANSWER: <answer>
+
+    Question:
+    {question}
+
+    FINAL_ANSWER:
