@@ -37,6 +37,13 @@ V3_2_TEXT_BASIC_SUITE = [
     "always_gemma",
     "risk_aware_routing",
     "difficulty_routing",
+    "random_routing",
+    "adaroute_mm_full",
+]
+
+V3_2_TEXT_ADDED_BASELINES_SUITE = [
+    "random_routing",
+    "adaroute_mm_full",
 ]
 
 
@@ -180,4 +187,6 @@ def suite_modes(name: str) -> list[str]:
         return list(V3_1_TEXT_BASIC_SUITE)
     if name == "text_fusion_v3_2_basic":
         return list(V3_2_TEXT_BASIC_SUITE)
-    raise ValueError("Available suites: 'vqav2_yesno_ablation', 'text_fusion_v3_basic', 'text_fusion_v3_1_basic', 'text_fusion_v3_2_basic'")
+    if name == "text_fusion_v3_2_added_baselines":
+        return list(V3_2_TEXT_ADDED_BASELINES_SUITE)
+    raise ValueError("Available suites: 'vqav2_yesno_ablation', 'text_fusion_v3_basic', 'text_fusion_v3_1_basic', 'text_fusion_v3_2_basic', 'text_fusion_v3_2_added_baselines'")

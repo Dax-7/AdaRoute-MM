@@ -24,6 +24,12 @@ def test_v3_2_suite_and_config_are_independent(tmp_path):
         "always_gemma",
         "risk_aware_routing",
         "difficulty_routing",
+        "random_routing",
+        "adaroute_mm_full",
+    ]
+    assert suite_modes("text_fusion_v3_2_added_baselines") == [
+        "random_routing",
+        "adaroute_mm_full",
     ]
     assert suite_modes("text_fusion_v3_1_basic") == [
         "always_small",
@@ -32,6 +38,26 @@ def test_v3_2_suite_and_config_are_independent(tmp_path):
         "difficulty_routing",
     ]
     assert config["routing"]["default_policy"] == "difficulty_based"
+    assert config["runtime"]["experiment_version"] == "v3_2_text"
+
+
+def test_v3_2_full_baseline_keeps_text_settings_with_resource_fallback(tmp_path):
+    base = {
+        "routing": {
+            "policies": {
+                "latency_aware": {"simple": "qwen_small", "medium": "phi3_medium", "hard": "gemma_large"},
+            }
+        },
+        "paths": {},
+        "cache": {},
+        "fallback": {},
+    }
+    config = resolve_mode_config(base, "adaroute_mm_full", output_dir=str(tmp_path / "run"), experiment_version="v3_2_text")
+
+    assert config["vlm"]["enabled"] is False
+    assert config["routing"]["default_policy"] == "latency_aware"
+    assert config["fallback"]["enabled"] is True
+    assert config["cache"]["enabled"] is True
     assert config["runtime"]["experiment_version"] == "v3_2_text"
 
 

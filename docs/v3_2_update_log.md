@@ -44,6 +44,11 @@ v3_2 在 v3_1 text-only 工作流基础上做两类改动：
     - `always_gemma`
     - `risk_aware_routing`
     - `difficulty_routing`
+    - `random_routing`
+    - `adaroute_mm_full`
+  - 新增 `text_fusion_v3_2_added_baselines` suite，用于在服务器上只补跑 v3_2.5 新增的两条 baseline：
+    - `random_routing`
+    - `adaroute_mm_full`
 
 - `adaroute/eval/metrics.py`
   - 新增 `model_usage_by_source`
@@ -94,6 +99,34 @@ hard cue 当前包括：
 
 ## 运行方式
 
+## v3_2.5 新增 baseline
+
+v3_2.5 不改变 v3_2 的模型、prompt、dataset、输出根目录和 `experiment_version`，只把两条已有实验模式加入 v3_2 text-only suite：
+
+| mode | 含义 | 说明 |
+| --- | --- | --- |
+| `random_routing` | Random Routing | 每个样本随机选择一个模型，作为随机路由基线。 |
+| `adaroute_mm_full` | AdaRoute-MM Full | 使用资源感知 `latency_aware` routing，并开启 fallback；在 v3_2 text-only 设置下仍关闭 VLM。 |
+
+默认 suite `text_fusion_v3_2_basic` 现在会按顺序运行 7 个模式：
+
+```text
+always_small
+always_middle
+always_gemma
+risk_aware_routing
+difficulty_routing
+random_routing
+adaroute_mm_full
+```
+
+新增两个 baseline 的结果仍和 v3_2 结果并列保存在同一个 run 目录下，例如：
+
+```text
+data/experiments_v3_2/v3_2_5_added_baselines_001/random_routing/
+data/experiments_v3_2/v3_2_5_added_baselines_001/adaroute_mm_full/
+```
+
 先确认本地或服务器 Ollama 已有模型：
 
 ```powershell
@@ -104,6 +137,22 @@ python scripts/check_ollama_models.py --config configs/default.yaml --override-c
 
 ```powershell
 python scripts/v3_2_run_experiment_suite.py --run-id v3_2_result_001
+```
+
+如果服务器上只想快捷补跑 v3_2.5 新增的两条 baseline：
+
+```powershell
+python scripts/v3_2_run_experiment_suite.py `
+  --suite text_fusion_v3_2_added_baselines `
+  --run-id v3_2_5_added_baselines_001
+```
+
+Linux / bash 写法：
+
+```bash
+python scripts/v3_2_run_experiment_suite.py \
+  --suite text_fusion_v3_2_added_baselines \
+  --run-id v3_2_5_added_baselines_001
 ```
 
 默认输出：
