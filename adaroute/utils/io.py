@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -27,7 +28,36 @@ def load_config(config_path: str | Path = "configs/default.yaml", override_path:
     config = load_yaml(config_path)
     if override_path:
         config = deep_merge(config, load_yaml(override_path))
+    config = apply_environment_overrides(config)
     return config
+
+
+def apply_environment_overrides(config: dict[str, Any]) -> dict[str, Any]:
+    overrides: dict[str, Any] = {}
+    ollama_base_url = os.environ.get("OLLAMA_BASE_URL")
+    if ollama_base_url:
+        overrides.setdefault("ollama", {})["base_url"] = ollama_base_url
+
+    model_env_map = {
+        "ADAROUTE_VLM_MODEL": "moondream_vlm",
+        "ADAROUTE_ROUTER_MODEL": "router_small",
+        "ADAROUTE_SMALL_MODEL": "qwen_small",
+        "ADAROUTE_MEDIUM_MODEL": "phi3_medium",
+        "ADAROUTE_LARGE_MODEL": "gemma_large",
+    }
+    model_overrides: dict[str, Any] = {}
+    for env_name, model_key in model_env_map.items():
+        model_name = os.environ.get(env_name)
+        if model_name:
+            model_overrides.setdefault(model_key, {})["model_name"] = model_name
+    if model_overrides:
+        overrides["models"] = model_overrides
+
+    return deep_merge(config, overrides) if overrides else config
+
+
+def ollama_base_url(config: dict[str, Any]) -> str:
+    return os.environ.get("OLLAMA_BASE_URL") or config.get("ollama", {}).get("base_url") or "http://localhost:11434"
 
 
 def load_prompts(path: str | Path = "configs/prompts.yaml") -> dict[str, Any]:

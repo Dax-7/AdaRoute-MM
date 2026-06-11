@@ -31,6 +31,9 @@ data/experiments/**/logs/
 data/experiments/**/requests/
 data/experiments_v3/
 data/experiments_v3_1/
+data/experiments_v3_2/
+results/docker_8gb/
+diagram/
 *.log
 
 # Large/raw datasets and model artifacts

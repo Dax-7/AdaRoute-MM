@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from adaroute.utils.io import load_config
+from adaroute.utils.io import load_config, ollama_base_url
 
 
 def main() -> None:
@@ -19,7 +19,7 @@ def main() -> None:
     parser.add_argument("--override-config", default=None)
     args = parser.parse_args()
     config = load_config(args.config, args.override_config)
-    base_url = config.get("ollama", {}).get("base_url", "http://localhost:11434").rstrip("/")
+    base_url = ollama_base_url(config).rstrip("/")
     try:
         response = requests.get(f"{base_url}/api/tags", timeout=10)
         response.raise_for_status()

@@ -12,7 +12,7 @@ from adaroute.modules.fallback import FallbackManager, check_response_quality
 from adaroute.modules.llm import LLMModule
 from adaroute.modules.router import RouterModule
 from adaroute.modules.vlm import VLMModule
-from adaroute.utils.io import output_path, write_json
+from adaroute.utils.io import ollama_base_url, output_path, write_json
 from adaroute.utils.logger import setup_logger
 from adaroute.utils.system_monitor import get_system_state
 
@@ -23,7 +23,7 @@ class AdaRoutePipeline:
         self.prompts = prompts
         ollama_cfg = config.get("ollama", {})
         self.client = OllamaClient(
-            ollama_cfg.get("base_url", "http://localhost:11434"),
+            ollama_base_url(config),
             ollama_cfg.get("api_generate", "/api/generate"),
             ollama_cfg.get("default_timeout", 120),
         )

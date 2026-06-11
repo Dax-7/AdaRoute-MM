@@ -1,0 +1,49 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      ADAROUTE_ROUTER_MODEL: ${ADAROUTE_ROUTER_MODEL:-qwen2.5:1.5b}
+      ADAROUTE_SMALL_MODEL: ${ADAROUTE_SMALL_MODEL:-qwen2.5:1.5b}
+      ADAROUTE_MEDIUM_MODEL: ${ADAROUTE_MEDIUM_MODEL:-phi3:latest}
+      ADAROUTE_LARGE_MODEL: ${ADAROUTE_LARGE_MODEL:-sam860/gemma3n:e2b-Q3_K_XL}
+      ADAROUTE_VLM_MODEL: ${ADAROUTE_VLM_MODEL:-moondream:latest}
+    volumes:
+      - ollama_models:/root/.ollama
+      - ./docker/scripts:/scripts:ro
+
+  adaroute:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    depends_on:
+      - ollama
+    working_dir: /app
+    mem_limit: 8g
+    memswap_limit: 8g
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      PYTHONPATH: /app
+      ADAROUTE_ROUTER_MODEL: ${ADAROUTE_ROUTER_MODEL:-qwen2.5:1.5b}
+      ADAROUTE_SMALL_MODEL: ${ADAROUTE_SMALL_MODEL:-qwen2.5:1.5b}
+      ADAROUTE_MEDIUM_MODEL: ${ADAROUTE_MEDIUM_MODEL:-phi3:latest}
+      ADAROUTE_LARGE_MODEL: ${ADAROUTE_LARGE_MODEL:-sam860/gemma3n:e2b-Q3_K_XL}
+      ADAROUTE_VLM_MODEL: ${ADAROUTE_VLM_MODEL:-moondream:latest}
+      ADAROUTE_DATASET: ${ADAROUTE_DATASET:-data/datasets/v3_1_text_fusion/fusion_v3_1_1000_200-200-400-100-100.jsonl}
+      ADAROUTE_RESULTS_DIR: ${ADAROUTE_RESULTS_DIR:-results/docker_8gb}
+      ADAROUTE_RUN_ID: ${ADAROUTE_RUN_ID:-}
+      ADAROUTE_SAMPLE_SIZE: ${ADAROUTE_SAMPLE_SIZE:-100}
+      ADAROUTE_CONFIG: ${ADAROUTE_CONFIG:-configs/default.yaml}
+      ADAROUTE_OVERRIDE_CONFIG: ${ADAROUTE_OVERRIDE_CONFIG:-configs/v3_2_text.yaml}
+      ADAROUTE_PROMPTS: ${ADAROUTE_PROMPTS:-configs/prompts_v3_2.yaml}
+      ADAROUTE_MODES: ${ADAROUTE_MODES:-always_small,always_middle,always_gemma,difficulty_routing,random_routing,adaroute_mm_full}
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./configs:/app/configs
+    command: ["sh", "/app/docker/scripts/run_all.sh"]
+
+volumes:
+  ollama_models:
