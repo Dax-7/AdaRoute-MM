@@ -1,0 +1,19 @@
+vlm:
+  enabled: true
+  skip_if_no_image: true
+  cache_enabled: true
+  caption_mode: image_caption
+
+fallback:
+  enabled: false
+
+cache:
+  enabled: true
+  cache_dir: data/experiments/vqav2_cache_eval/cache_on/cache
+  cache_vlm: true
+  cache_router: false
+  cache_llm: false
+
+runtime:
+  experiment_version: v2
+  experiment_mode: vqav2_cache_on

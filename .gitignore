@@ -36,6 +36,42 @@ results/docker_8gb/
 diagram/
 *.log
 
+# Local experiment outputs and paper workspace
+data/datasets/vqav2_cache_eval/
+data/experiments/vqav2_cache_eval_runs/
+data/experiments_v3_2_latency_calibrated_8gb/
+data/inputs/vqav2_cache_eval/
+data/paper_results/
+data/processed/
+docs/section6_writing_notes_zh.md
+paper/
+scripts/paper/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.out
+*.toc
+*.lof
+*.lot
+*.bcf
+*.run.xml
+*.xdv
+*.dvi
+*.nav
+*.snm
+*.vrb
+*.ilg
+*.ind
+*.idx
+*.acn
+*.acr
+*.alg
+
 # Large/raw datasets and model artifacts
 data/inputs/VQAv2/
 data/inputs/**/*.parquet
